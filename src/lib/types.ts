@@ -52,6 +52,12 @@ export interface Candidate {
   license_number: string | null;
   notes: string | null;
   score: number;
+  last_contacted_at: string | null;
+  next_followup_at: string | null;
+  hired_at: string | null;
+  interview_date: string | null;
+  offer_amount: string | null;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string;
 }
