@@ -15,11 +15,13 @@ export default function OutreachPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [sending, setSending] = useState(false);
 
+  const [sendMode, setSendMode] = useState(false); // true = actually send via Twilio/SendGrid
   const [form, setForm] = useState({
     candidate_id: "",
     type: "email" as "sms" | "email" | "call" | "linkedin" | "other",
     subject: "",
     content: "",
+    to: "", // phone or email address
   });
 
   useEffect(() => {
@@ -38,18 +40,26 @@ export default function OutreachPage() {
     if (!form.candidate_id || !form.content) return;
     setSending(true);
 
-    const res = await fetch("/api/outreach", {
+    const endpoint = sendMode && form.to ? "/api/outreach/send" : "/api/outreach";
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
 
     if (res.ok) {
-      const newOutreach = await res.json();
+      const data = await res.json();
+      const newOutreach = data.outreach || data;
       setOutreach([newOutreach, ...outreach]);
-      setForm({ candidate_id: "", type: "email", subject: "", content: "" });
+      if (sendMode && data.sent) {
+        toast.success(`${form.type.toUpperCase()} sent successfully!`);
+      } else if (sendMode && data.send_error) {
+        toast.warning(`Logged but send failed: ${data.send_error}`);
+      } else {
+        toast.success("Outreach logged!");
+      }
+      setForm({ candidate_id: "", type: "email", subject: "", content: "", to: "" });
       setShowCompose(false);
-      toast.success("Outreach logged!");
     } else {
       toast.error("Failed to log outreach");
     }
@@ -139,6 +149,25 @@ export default function OutreachPage() {
                 className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="Re: Nursing opportunity"
               />
+            </div>
+            <div className="sm:col-span-2 flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendMode}
+                  onChange={(e) => setSendMode(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="font-medium">Actually send (Twilio SMS / SendGrid Email)</span>
+              </label>
+              {sendMode && (
+                <input
+                  value={form.to}
+                  onChange={(e) => setForm({ ...form, to: e.target.value })}
+                  placeholder={form.type === "sms" ? "Phone: (555) 123-4567" : "Email: nurse@email.com"}
+                  className="flex-1 px-3 py-2 rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                />
+              )}
             </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium mb-1">Content / Notes</label>

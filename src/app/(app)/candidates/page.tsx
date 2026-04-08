@@ -3,12 +3,20 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Search, Filter, ChevronDown, ChevronUp, MapPin, Phone,
-  Mail, Award, Loader2, UserPlus, ExternalLink,
+  Mail, Award, Loader2, UserPlus, ExternalLink, Zap, Flame,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import type { Candidate, CandidateStatus } from "@/lib/types";
 import { ROLE_TYPES, STATUS_COLORS } from "@/lib/types";
+
+function ScoreBadge({ score }: { score: number }) {
+  if (score >= 70) return <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium flex items-center gap-1"><Flame className="w-3 h-3" />Hot</span>;
+  if (score >= 50) return <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Strong</span>;
+  if (score >= 30) return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Warm</span>;
+  if (score > 0) return <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Cool</span>;
+  return <span className="text-xs text-muted">—</span>;
+}
 
 const STATUSES: CandidateStatus[] = [
   "discovered", "researched", "contacted", "responded", "interested",
@@ -65,6 +73,24 @@ export default function CandidatesPage() {
           <h2 className="text-2xl font-bold">Candidate Pipeline</h2>
           <p className="text-muted mt-1">{total} candidates total</p>
         </div>
+        <button
+          onClick={async () => {
+            const res = await fetch("/api/radar/score", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ building_id: activeBuilding?.id }),
+            });
+            if (res.ok) {
+              const d = await res.json();
+              toast.success(`Scored ${d.updated} candidates`);
+              load();
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl transition text-sm"
+        >
+          <Zap className="w-4 h-4" />
+          Auto-Score All
+        </button>
       </div>
 
       {/* Filters */}
@@ -123,6 +149,7 @@ export default function CandidatesPage() {
                   <th className="px-4 py-3 text-left font-medium">Status</th>
                   <th className="px-4 py-3 text-left font-medium">Location</th>
                   <th className="px-4 py-3 text-left font-medium">Contact</th>
+                  <th className="px-4 py-3 text-left font-medium">Score</th>
                   <th className="px-4 py-3 text-left font-medium">Source</th>
                   <th className="px-4 py-3 text-left font-medium">Building</th>
                 </tr>
@@ -182,6 +209,9 @@ export default function CandidatesPage() {
                           </a>
                         )}
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <ScoreBadge score={c.score} />
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-xs text-muted">{c.source.replace("_", " ")}</span>

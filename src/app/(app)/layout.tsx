@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Radar, LayoutDashboard, Building2, Search, Users,
   MessageSquare, BarChart3, LogOut, Menu, X, ChevronDown,
-  MapPin,
+  MapPin, ArrowRightLeft, Shield, Briefcase, TrendingUp, ClipboardList,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import type { Building } from "@/lib/types";
@@ -17,7 +17,11 @@ const NAV_ITEMS = [
   { href: "/radar", icon: Radar, label: "Talent Radar" },
   { href: "/candidates", icon: Users, label: "Pipeline" },
   { href: "/outreach", icon: MessageSquare, label: "Outreach" },
-  { href: "/intelligence", icon: BarChart3, label: "Intel" },
+  { href: "/intelligence", icon: BarChart3, label: "CMS Intel" },
+  { href: "/relocation", icon: ArrowRightLeft, label: "Relocation" },
+  { href: "/military", icon: Shield, label: "Military" },
+  { href: "/workforce", icon: TrendingUp, label: "Workforce" },
+  { href: "/boards", icon: ClipboardList, label: "Licensing" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
