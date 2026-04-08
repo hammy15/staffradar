@@ -3,8 +3,33 @@ import { getDb } from "@/lib/db";
 import { advancedScoreCandidate } from "@/lib/sweep";
 import type { Building, Candidate } from "@/lib/types";
 
-// Full Radar Sweep: scan NPI for all priority roles near a building,
-// import results, score them, and return a complete intelligence report
+// Nearby cities for rural areas — expand search radius
+const NEARBY_CITIES: Record<string, string[]> = {
+  // Idaho
+  "Emmett": ["Boise", "Nampa", "Caldwell", "Eagle", "Meridian"],
+  "Orofino": ["Lewiston", "Moscow", "Grangeville"],
+  "Kellogg": ["Coeur d'Alene", "Post Falls", "Wallace"],
+  "Bellevue": ["Twin Falls", "Hailey", "Ketchum", "Sun Valley"],
+  "Payette": ["Nampa", "Caldwell", "Ontario"],
+  "Weiser": ["Payette", "Ontario", "Caldwell"],
+  "Silverton": ["Kellogg", "Wallace", "Coeur d'Alene"],
+  // Washington
+  "Colfax": ["Pullman", "Moscow", "Spokane"],
+  "Colville": ["Spokane", "Chewelah", "Kettle Falls"],
+  "Blaine": ["Bellingham", "Lynden", "Ferndale"],
+  "Battle Ground": ["Vancouver", "Portland", "Camas"],
+  "Clarkston": ["Lewiston", "Moscow", "Pullman"],
+  "Anacortes": ["Burlington", "Mount Vernon", "Bellingham"],
+  // Oregon
+  "Brookings": ["Gold Beach", "Crescent City", "Medford"],
+  "Wood Village": ["Gresham", "Portland", "Troutdale"],
+  // Montana
+  "Libby": ["Kalispell", "Eureka", "Troy"],
+  "Eureka": ["Kalispell", "Whitefish", "Libby"],
+  // Arizona
+  "Sun City": ["Phoenix", "Glendale", "Peoria", "Surprise"],
+};
+
 export async function POST(req: NextRequest) {
   const { building_id, roles } = await req.json();
 
@@ -14,7 +39,6 @@ export async function POST(req: NextRequest) {
 
   const db = getDb();
   try {
-    // Get building
     const bRes = await db.query("SELECT * FROM buildings WHERE id = $1", [building_id]);
     if (bRes.rows.length === 0) {
       return NextResponse.json({ error: "Building not found" }, { status: 404 });
@@ -27,122 +51,164 @@ export async function POST(req: NextRequest) {
     let totalImported = 0;
     let totalSkipped = 0;
 
-    // Scan NPI for each role
+    const taxonomyMap: Record<string, string> = {
+      RN: "Registered Nurse",
+      LPN: "Licensed Practical Nurse",
+      CNA: "Nurse Aide",
+      "Med Tech": "Medical Technologist",
+      "Physical Therapist": "Physical Therapist",
+      "Occupational Therapist": "Occupational Therapist",
+      "Speech Therapist": "Speech-Language Pathologist",
+      "Social Worker": "Social Worker",
+    };
+
     for (const role of sweepRoles) {
-      const taxonomyMap: Record<string, string> = {
-        RN: "Registered Nurse",
-        LPN: "Licensed Practical Nurse",
-        CNA: "Nurse Aide",
-        "Med Tech": "Medical Technologist",
-      };
       const taxonomy = taxonomyMap[role] || role;
 
-      const params = new URLSearchParams({
-        version: "2.1",
-        enumeration_type: "NPI-1",
-        taxonomy_description: taxonomy,
-        state: building.state,
-        city: building.city,
-        limit: "100",
+      // Build list of cities to search: primary + nearby + state-wide fallback
+      const citiesToSearch = [building.city];
+      const nearby = NEARBY_CITIES[building.city];
+      if (nearby) citiesToSearch.push(...nearby);
+
+      let allNpiResults: Record<string, unknown>[] = [];
+
+      for (const searchCity of citiesToSearch) {
+        const params = new URLSearchParams({
+          version: "2.1",
+          enumeration_type: "NPI-1",
+          taxonomy_description: taxonomy,
+          state: building.state,
+          city: searchCity,
+          limit: "200",
+        });
+
+        try {
+          const npiRes = await fetch(`https://npiregistry.cms.hhs.gov/api/?${params.toString()}`);
+          const npiData = await npiRes.json();
+          if (npiData.results) {
+            allNpiResults.push(...npiData.results);
+          }
+        } catch {
+          // Continue with other cities
+        }
+
+        // If we have enough results, stop expanding
+        if (allNpiResults.length >= 100) break;
+      }
+
+      // If still thin, do a state-wide search (no city filter)
+      if (allNpiResults.length < 20) {
+        try {
+          const stateParams = new URLSearchParams({
+            version: "2.1",
+            enumeration_type: "NPI-1",
+            taxonomy_description: taxonomy,
+            state: building.state,
+            limit: "200",
+          });
+          const stateRes = await fetch(`https://npiregistry.cms.hhs.gov/api/?${stateParams.toString()}`);
+          const stateData = await stateRes.json();
+          if (stateData.results) {
+            // Add state results that aren't duplicates
+            const existingNpis = new Set(allNpiResults.map((r: Record<string, unknown>) => r.number));
+            for (const r of stateData.results) {
+              if (!existingNpis.has(r.number)) {
+                allNpiResults.push(r);
+              }
+            }
+          }
+        } catch {
+          // OK
+        }
+      }
+
+      // Deduplicate by NPI
+      const seenNpis = new Set<string>();
+      allNpiResults = allNpiResults.filter((r: Record<string, unknown>) => {
+        if (seenNpis.has(r.number as string)) return false;
+        seenNpis.add(r.number as string);
+        return true;
       });
 
-      try {
-        const npiRes = await fetch(`https://npiregistry.cms.hhs.gov/api/?${params.toString()}`);
-        const npiData = await npiRes.json();
+      let roleImported = 0;
+      let roleSkipped = 0;
 
-        if (npiData.results) {
-          let roleImported = 0;
-          let roleSkipped = 0;
+      for (const r of allNpiResults) {
+        const basic = (r.basic || {}) as Record<string, string>;
+        const addresses = (r.addresses || []) as Array<Record<string, string>>;
+        const taxonomies = (r.taxonomies || []) as Array<Record<string, unknown>>;
+        const practiceAddr = addresses.find((a) => a.address_purpose === "LOCATION") || addresses[0] || {};
+        const primaryTax = taxonomies.find((t) => t.primary) || taxonomies[0] || {};
 
-          for (const r of npiData.results) {
-            const basic = r.basic || {};
-            const addresses = r.addresses || [];
-            const taxonomies = r.taxonomies || [];
-            const practiceAddr = addresses.find((a: Record<string, string>) => a.address_purpose === "LOCATION") || addresses[0] || {};
-            const primaryTax = taxonomies.find((t: Record<string, unknown>) => t.primary) || taxonomies[0] || {};
-
-            // Check for existing
-            const existing = await db.query("SELECT id FROM candidates WHERE npi = $1", [r.number]);
-            if (existing.rows.length > 0) {
-              roleSkipped++;
-              continue;
-            }
-
-            // Build candidate for scoring
-            const candidateData = {
-              npi: r.number,
-              first_name: basic.first_name || "",
-              last_name: basic.last_name || "",
-              credentials: basic.credential || "",
-              role_type: role,
-              specialty: primaryTax.desc || "",
-              phone: practiceAddr.telephone_number || "",
-              address: practiceAddr.address_1 || "",
-              city: practiceAddr.city || "",
-              state: practiceAddr.state || "",
-              zip: practiceAddr.postal_code || "",
-              license_state: primaryTax.state || "",
-              license_number: primaryTax.license || "",
-              source: "radar_sweep",
-              source_detail: `Sweep: ${building.name} - ${role}`,
-              building_id: building.id,
-              is_traveler: false,
-              willingness_to_relocate: false,
-              status: "discovered" as const,
-              created_at: new Date().toISOString(),
-            };
-
-            // Advanced score
-            const score = advancedScoreCandidate(candidateData as Partial<Candidate>, building);
-
-            // Import with score
-            await db.query(
-              `INSERT INTO candidates (npi, first_name, last_name, credentials, role_type, specialty,
-                phone, address, city, state, zip, source, source_detail,
-                building_id, license_state, license_number, score)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
-              [
-                candidateData.npi, candidateData.first_name, candidateData.last_name,
-                candidateData.credentials, role, candidateData.specialty,
-                candidateData.phone, candidateData.address, candidateData.city,
-                candidateData.state, candidateData.zip, "radar_sweep",
-                candidateData.source_detail, building.id,
-                candidateData.license_state, candidateData.license_number, score.total,
-              ]
-            );
-            roleImported++;
-          }
-
-          results[role] = {
-            found: npiData.result_count || npiData.results.length,
-            imported: roleImported,
-            skipped: roleSkipped,
-          };
-          totalFound += npiData.result_count || npiData.results.length;
-          totalImported += roleImported;
-          totalSkipped += roleSkipped;
+        // Check for existing
+        const existing = await db.query("SELECT id FROM candidates WHERE npi = $1", [r.number]);
+        if (existing.rows.length > 0) {
+          roleSkipped++;
+          continue;
         }
-      } catch (err) {
-        results[role] = { error: String(err), found: 0, imported: 0, skipped: 0 };
+
+        const candidateData = {
+          state: practiceAddr.state || building.state,
+          city: practiceAddr.city || "",
+          role_type: role,
+          license_state: (primaryTax.state as string) || "",
+          is_traveler: false,
+          willingness_to_relocate: false,
+          status: "discovered" as const,
+          created_at: new Date().toISOString(),
+        } as Partial<Candidate>;
+
+        const score = advancedScoreCandidate(candidateData, building);
+
+        await db.query(
+          `INSERT INTO candidates (npi, first_name, last_name, credentials, role_type, specialty,
+            phone, address, city, state, zip, source, source_detail,
+            building_id, license_state, license_number, score)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+          [
+            r.number, basic.first_name, basic.last_name,
+            basic.credential, role, (primaryTax.desc as string) || "",
+            practiceAddr.telephone_number, practiceAddr.address_1,
+            practiceAddr.city, practiceAddr.state, practiceAddr.postal_code,
+            "radar_sweep", `Sweep: ${building.name} - ${role}`,
+            building.id, (primaryTax.state as string) || "", (primaryTax.license as string) || "",
+            score.total,
+          ]
+        );
+
+        await db.query(
+          `INSERT INTO activity_log (candidate_id, building_id, action, details) VALUES (
+            (SELECT id FROM candidates WHERE npi = $1 LIMIT 1), $2, $3, $4)`,
+          [r.number, building.id, "imported",
+           JSON.stringify({ source: "radar_sweep", npi: r.number, score: score.total })]
+        );
+
+        roleImported++;
       }
+
+      results[role] = {
+        found: allNpiResults.length,
+        imported: roleImported,
+        skipped: roleSkipped,
+      };
+      totalFound += allNpiResults.length;
+      totalImported += roleImported;
+      totalSkipped += roleSkipped;
     }
 
-    // Get top scored candidates from this sweep
+    // Get ALL top candidates for this building (not just from this sweep)
     const topCandidates = await db.query(
       `SELECT * FROM candidates
-       WHERE building_id = $1 AND source = 'radar_sweep'
+       WHERE building_id = $1
        ORDER BY score DESC LIMIT 20`,
       [building.id]
     );
 
-    // Score breakdown for top candidates
     const hotLeads = topCandidates.rows.filter((c: Candidate) => c.score >= 70);
     const strongProspects = topCandidates.rows.filter((c: Candidate) => c.score >= 50 && c.score < 70);
 
-    // Log the sweep
     await db.query(
-      `INSERT INTO activity_log (building_id, action, details)
-       VALUES ($1, $2, $3)`,
+      `INSERT INTO activity_log (building_id, action, details) VALUES ($1, $2, $3)`,
       [building.id, "radar_sweep", JSON.stringify({
         roles: sweepRoles, totalFound, totalImported, totalSkipped,
         hotLeads: hotLeads.length, strongProspects: strongProspects.length,
