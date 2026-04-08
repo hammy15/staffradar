@@ -21,18 +21,25 @@ export async function tavilySearch(query: string, options?: {
   const apiKey = process.env.TAVILY_API_KEY;
   if (!apiKey) return { results: [] };
 
+  const body: Record<string, unknown> = {
+    api_key: apiKey,
+    query,
+    search_depth: options?.search_depth || "basic",
+    max_results: options?.max_results || 10,
+    include_answer: true,
+  };
+  // Only add domain filters if explicitly provided — empty arrays cause issues
+  if (options?.include_domains && options.include_domains.length > 0) {
+    body.include_domains = options.include_domains;
+  }
+  if (options?.exclude_domains && options.exclude_domains.length > 0) {
+    body.exclude_domains = options.exclude_domains;
+  }
+
   const res = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      search_depth: options?.search_depth || "basic",
-      max_results: options?.max_results || 10,
-      include_domains: options?.include_domains,
-      exclude_domains: options?.exclude_domains,
-      include_answer: true,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -93,47 +100,42 @@ export function buildTavilyQueries(role: string, city: string, state: string): A
   return [
     {
       source: "indeed",
-      query: `${term} resume ${city} ${state} site:indeed.com`,
-      domains: ["indeed.com"],
-      label: "Indeed Resumes",
+      query: `${term} jobs ${city} ${state} site:indeed.com`,
+      label: "Indeed",
     },
     {
       source: "linkedin",
       query: `${term} ${city} ${state} site:linkedin.com/in`,
-      domains: ["linkedin.com"],
       label: "LinkedIn Profiles",
     },
     {
       source: "google_jobs",
-      query: `${term} seeking employment ${city} ${state} resume`,
-      label: "Active Job Seekers",
+      query: `${term} hiring ${city} ${state} apply now`,
+      label: "Job Postings",
     },
     {
       source: "travel_nurse_boards",
-      query: `travel ${term} assignment ${city} ${state}`,
-      domains: ["vivian.com", "nomadhealth.com", "ayahealthcare.com"],
+      query: `travel ${term} ${city} ${state} site:vivian.com OR site:nomadhealth.com`,
       label: "Travel Nurse Boards",
     },
     {
       source: "nursing_schools",
-      query: `nursing program graduates ${city} ${state} 2025 2026`,
-      label: "Nursing Program Grads",
+      query: `nursing CNA program ${city} ${state} graduates hiring`,
+      label: "Nursing Programs",
     },
     {
       source: "facebook_groups",
-      query: `${term} ${state} facebook group hiring looking for work`,
-      domains: ["facebook.com"],
-      label: "Facebook Groups",
+      query: `${term} ${city} ${state} hiring jobs group site:facebook.com`,
+      label: "Facebook",
     },
     {
       source: "craigslist",
-      query: `${term} ${city} ${state} resume site:craigslist.org`,
-      domains: ["craigslist.org"],
+      query: `${term} ${city} ${state} site:craigslist.org`,
       label: "Craigslist",
     },
     {
       source: "state_workforce",
-      query: `${term} job seeker ${city} ${state} workforce development`,
+      query: `${term} ${city} ${state} workforce jobs department of labor`,
       label: "State Workforce",
     },
   ];

@@ -21,8 +21,7 @@ export async function GET(req: NextRequest) {
     queries.map(async (q) => {
       const tavResult = await tavilySearch(q.query, {
         search_depth: "basic",
-        max_results: 8,
-        include_domains: q.domains,
+        max_results: 5,
       });
 
       return {
