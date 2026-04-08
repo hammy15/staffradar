@@ -7,7 +7,7 @@ import {
   Radar, LayoutDashboard, Building2, Users,
   MessageSquare, BarChart3, LogOut, Menu, X, ChevronDown,
   MapPin, ArrowRightLeft, Shield, Briefcase, TrendingUp, Zap,
-  Search, AlertCircle,
+  Search, AlertCircle, Globe,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import type { Building } from "@/lib/types";
@@ -24,6 +24,7 @@ const NAV_SECTIONS = [
     label: "Discover",
     items: [
       { href: "/sweep", icon: Zap, label: "Full Sweep" },
+      { href: "/sources", icon: Globe, label: "All Sources" },
       { href: "/radar", icon: Search, label: "NPI Search" },
       { href: "/intelligence", icon: BarChart3, label: "CMS Intel" },
       { href: "/military", icon: Shield, label: "Military" },

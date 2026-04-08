@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users, Search, MapPin, Phone, Mail, Loader2, UserPlus, Zap, Flame,
-  Download, CheckSquare, Square, ArrowUpDown,
+  Download, CheckSquare, Square,
 } from "lucide-react";
+import SourceBadge from "@/components/SourceBadge";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import type { Candidate, CandidateStatus } from "@/lib/types";
@@ -196,6 +197,7 @@ export default function CandidatesPage() {
                   <th className="px-3 py-3 text-left font-medium">Score</th>
                   <th className="px-3 py-3 text-left font-medium">Location</th>
                   <th className="px-3 py-3 text-left font-medium">Contact</th>
+                  <th className="px-3 py-3 text-left font-medium">Source</th>
                   <th className="px-3 py-3 text-left font-medium">Building</th>
                 </tr>
               </thead>
@@ -235,6 +237,7 @@ export default function CandidatesPage() {
                         {c.email && <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()} className="text-muted hover:text-primary"><Mail className="w-3.5 h-3.5" /></a>}
                       </div>
                     </td>
+                    <td className="px-3 py-3"><SourceBadge source={c.source} /></td>
                     <td className="px-3 py-3"><span className="text-xs">{(c as unknown as Record<string, string>).building_name || "—"}</span></td>
                   </tr>
                 ))}
