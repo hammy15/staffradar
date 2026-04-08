@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Radar, LayoutDashboard, Building2, Search, Users,
   MessageSquare, BarChart3, LogOut, Menu, X, ChevronDown,
-  MapPin, ArrowRightLeft, Shield, Briefcase, TrendingUp, ClipboardList,
+  MapPin, ArrowRightLeft, Shield, Briefcase, TrendingUp, ClipboardList, Zap,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import type { Building } from "@/lib/types";
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/buildings", icon: Building2, label: "Buildings" },
   { href: "/radar", icon: Radar, label: "Talent Radar" },
+  { href: "/sweep", icon: Zap, label: "Full Sweep" },
   { href: "/pipeline", icon: Briefcase, label: "Pipeline Board" },
   { href: "/candidates", icon: Users, label: "Candidates" },
   { href: "/outreach", icon: MessageSquare, label: "Outreach" },

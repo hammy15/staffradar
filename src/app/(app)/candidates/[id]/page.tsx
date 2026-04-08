@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Phone, Mail, MapPin, Award, Building2, Clock,
   Send, MessageSquare, Calendar, CheckCircle2, User, FileText,
-  Loader2, Flame, Zap, Edit3, Save, X, Plus, ExternalLink,
+  Loader2, Flame, Zap, Edit3, Save, X, Plus,
   AlertCircle, Bell,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -363,6 +363,21 @@ export default function CandidateDetailPage() {
                 <Mail className="w-4 h-4" /> Email Direct
               </a>
             )}
+            <button onClick={() => window.open(`/api/candidates/${id}/packet`, "_blank")}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-xl text-sm">
+              <FileText className="w-4 h-4" /> Download Packet
+            </button>
+            <button onClick={async () => {
+              const res = await fetch(`/api/candidates/${id}/advanced-score`);
+              if (res.ok) {
+                const data = await res.json();
+                toast.success(`Score: ${data.total}/100 (${data.grade}) — ${data.recommendation.replace(/_/g, " ")}`);
+                load();
+              }
+            }}
+              className="flex items-center gap-2 px-4 py-2 border border-border hover:bg-slate-50 font-medium rounded-xl text-sm">
+              <Zap className="w-4 h-4" /> Deep Score
+            </button>
           </div>
 
           {/* Outreach Compose */}
