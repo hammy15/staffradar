@@ -10,6 +10,7 @@ interface TavilyResult {
 interface TavilyResponse {
   results: TavilyResult[];
   answer?: string;
+  error?: string;
 }
 
 export async function tavilySearch(query: string, options?: {
@@ -43,11 +44,13 @@ export async function tavilySearch(query: string, options?: {
   });
 
   if (!res.ok) {
-    console.error("Tavily error:", res.status, await res.text());
-    return { results: [] };
+    const errText = await res.text();
+    console.error("Tavily error:", res.status, errText);
+    return { results: [], error: `${res.status}: ${errText}` };
   }
 
-  return res.json();
+  const data = await res.json();
+  return data;
 }
 
 // Parse a name from a search result title

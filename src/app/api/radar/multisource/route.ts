@@ -19,15 +19,22 @@ export async function GET(req: NextRequest) {
   // Run all Tavily searches in parallel
   const searchResults = await Promise.all(
     queries.map(async (q) => {
-      const tavResult = await tavilySearch(q.query, {
-        search_depth: "basic",
-        max_results: 5,
-      });
+      let tavResult;
+      try {
+        tavResult = await tavilySearch(q.query, {
+          search_depth: "basic",
+          max_results: 5,
+        });
+      } catch (err) {
+        console.error(`Tavily search failed for ${q.source}:`, err);
+        tavResult = { results: [], error: String(err) };
+      }
 
       return {
         source: q.source,
         label: q.label,
-        results: tavResult.results.map((r) => {
+        error: tavResult.error || null,
+        results: (tavResult.results || []).map((r) => {
           const name = parseNameFromResult(r.title);
           const location = parseLocationFromContent(r.content);
           return {
