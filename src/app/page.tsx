@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Radar, Shield, Users, Building2, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const [name, setName] = useState("");
@@ -16,145 +15,101 @@ export default function LoginPage() {
     if (!name.trim() || !password) return;
     setLoading(true);
     setError("");
-
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: name.trim(), password }),
     });
-
-    if (res.ok) {
-      router.push("/dashboard");
-    } else {
-      const data = await res.json();
-      setError(data.error || "Invalid credentials");
-    }
+    if (res.ok) { router.push("/dashboard"); }
+    else { const d = await res.json(); setError(d.error || "Invalid credentials"); }
     setLoading(false);
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left — Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-sky-600 via-sky-500 to-cyan-400 relative overflow-hidden">
-        <div className="absolute inset-0">
-          {/* Radar circles */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-[600px] h-[600px] rounded-full border border-white/10 animate-pulse-ring" />
-          </div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-[400px] h-[400px] rounded-full border border-white/15 animate-pulse-ring" style={{ animationDelay: "0.5s" }} />
-          </div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-[200px] h-[200px] rounded-full border border-white/20 animate-pulse-ring" style={{ animationDelay: "1s" }} />
-          </div>
-          {/* Sweep line */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] animate-radar-sweep">
-            <div className="absolute top-1/2 left-1/2 w-1/2 h-0.5 bg-gradient-to-r from-white/40 to-transparent origin-left" />
-          </div>
-          {/* Blips */}
-          {[
-            { top: "30%", left: "25%", delay: "0s" },
-            { top: "45%", left: "60%", delay: "1s" },
-            { top: "65%", left: "35%", delay: "2s" },
-            { top: "25%", left: "55%", delay: "0.5s" },
-            { top: "70%", left: "65%", delay: "1.5s" },
-          ].map((blip, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 bg-white rounded-full animate-pulse"
-              style={{ top: blip.top, left: blip.left, animationDelay: blip.delay }}
-            />
-          ))}
-        </div>
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <div className="flex items-center gap-3 mb-8">
-            <Radar className="w-10 h-10" />
-            <span className="text-3xl font-bold tracking-tight">StaffRadar</span>
-          </div>
-          <h1 className="text-4xl font-bold leading-tight mb-4">
-            Healthcare Talent<br />Intelligence Platform
-          </h1>
-          <p className="text-lg text-white/80 max-w-md mb-12">
-            Discover, analyze, and recruit top healthcare professionals before they even hit the job boards.
-          </p>
-          <div className="space-y-4">
-            {[
-              { icon: Users, text: "NPI Registry — Every licensed provider in the US" },
-              { icon: Building2, text: "CMS Data — Identify understaffed competitors" },
-              { icon: Shield, text: "Multi-source intelligence gathering" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-white/90">
-                <item.icon className="w-5 h-5 shrink-0" />
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </div>
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden noise-bg">
+      {/* Ambient rings */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[800px] h-[800px] rounded-full border border-cyan-500/5 animate-pulse-soft" />
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[500px] h-[500px] rounded-full border border-cyan-500/8 animate-pulse-soft" style={{ animationDelay: "0.7s" }} />
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[250px] h-[250px] rounded-full border border-cyan-500/12 animate-pulse-soft" style={{ animationDelay: "1.4s" }} />
+      </div>
+      {/* Sweep line */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[500px] h-[500px]" style={{ animation: "radar-rotate 8s linear infinite" }}>
+          <div className="absolute top-1/2 left-1/2 w-1/2 h-[1px] bg-gradient-to-r from-cyan-400/30 to-transparent origin-left" />
         </div>
       </div>
 
-      {/* Right — Login */}
-      <div className="flex-1 flex items-center justify-center px-8">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <Radar className="w-8 h-8 text-sky-500" />
-            <span className="text-2xl font-bold tracking-tight">StaffRadar</span>
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-sm px-6 animate-slide-up">
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/10 border border-cyan-500/20 mb-5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
+              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+              <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+            </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Sign in</h2>
-          <p className="text-muted mb-8">Enter your name to access your recruiting dashboard</p>
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-1.5">
-                Your Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sarah Johnson"
-                className="w-full px-4 py-3 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                required
-                autoFocus
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full px-4 py-3 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="text-danger text-sm bg-red-50 px-4 py-2 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || !name.trim() || !password}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  Enter StaffRadar
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
+          <h1 className="text-3xl font-bold tracking-tight text-glow">StaffRadar</h1>
+          <p className="text-secondary text-sm mt-2">Healthcare Talent Intelligence</p>
         </div>
+
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-2">
+              Your Name
+            </label>
+            <input
+              id="name" type="text" value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              className="w-full px-4 py-3 rounded-xl text-sm transition"
+              required autoFocus
+            />
+          </div>
+          <div>
+            <label htmlFor="pw" className="block text-xs font-medium text-secondary uppercase tracking-wider mb-2">
+              Password
+            </label>
+            <input
+              id="pw" type="password" value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              className="w-full px-4 py-3 rounded-xl text-sm transition"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 rounded-xl">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !name.trim() || !password}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm transition relative overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed
+              bg-gradient-to-r from-cyan-500 to-teal-400 text-gray-900 hover:from-cyan-400 hover:to-teal-300
+              shadow-[0_0_20px_rgba(34,211,238,0.2)] hover:shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin mx-auto" />
+            ) : (
+              "Enter StaffRadar"
+            )}
+          </button>
+        </form>
+
+        <p className="text-center text-muted text-xs mt-8">
+          Talent intelligence for SNF, ALF, Home Health & Hospice
+        </p>
       </div>
     </div>
   );
