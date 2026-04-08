@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import {
   TrendingUp, Search, Loader2, BarChart3, Users, DollarSign,
   ExternalLink, MapPin,
 } from "lucide-react";
 import { ROLE_TYPES, US_STATES } from "@/lib/types";
+
+const InteractiveChart = dynamic(() => import("@/components/InteractiveChart"), { ssr: false });
 
 interface WorkforceData {
   state: string;
@@ -201,6 +204,30 @@ export default function WorkforcePage() {
                   </tbody>
                 </table>
               </div>
+              {/* Interactive Charts */}
+              {data.roles && data.roles.length > 0 && (
+                <div className="px-6 py-4 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <InteractiveChart
+                    title={`Employment in ${data.state}`}
+                    subtitle="Total workers by role"
+                    data={data.roles.map((r: { role: string; total: number }) => ({ name: r.role, value: r.total }))}
+                    defaultType="bar"
+                    allowedTypes={["bar", "pie"]}
+                    height={250}
+                    valueFormatter={(v: number) => v.toLocaleString()}
+                  />
+                  <InteractiveChart
+                    title={`Average Salary in ${data.state}`}
+                    subtitle="Annual mean wage by role"
+                    data={data.roles.map((r: { role: string; avg_salary: number }) => ({ name: r.role, value: r.avg_salary }))}
+                    defaultType="bar"
+                    allowedTypes={["bar", "line"]}
+                    height={250}
+                    valueFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                    colors={["#2dd4bf"]}
+                  />
+                </div>
+              )}
               {data.bls_link && (
                 <div className="px-6 py-3 border-t border-border">
                   <a
