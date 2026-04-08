@@ -33,8 +33,8 @@ interface InteractiveChartProps {
 }
 
 const CHART_COLORS = [
-  "#22d3ee", "#2dd4bf", "#a78bfa", "#fbbf24", "#fb7185",
-  "#34d399", "#818cf8", "#f97316", "#60a5fa", "#e879f9",
+  "#2a7c7c", "#3b9e9e", "#d4840a", "#6366f1", "#c53838",
+  "#1a7a3a", "#8b5cf6", "#ea580c", "#2563eb", "#db2777",
 ];
 
 const TYPE_ICONS: Record<ChartType, typeof BarChart3> = {
@@ -53,7 +53,7 @@ const CustomTooltip = ({ active, payload, label, formatter }: {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-xl px-4 py-3 shadow-xl text-xs"
-      style={{ background: "rgba(26, 34, 53, 0.95)", border: "1px solid rgba(56, 189, 248, 0.15)", backdropFilter: "blur(12px)" }}>
+      style={{ background: "rgba(255,255,255,0.97)", border: "1px solid #e2e6ec", backdropFilter: "blur(12px)" }}>
       {label && <div className="text-secondary mb-1.5 font-medium">{label}</div>}
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 py-0.5">
@@ -96,7 +96,7 @@ export default function InteractiveChart({
       canvas.width = img.width * 2;
       canvas.height = img.height * 2;
       ctx!.scale(2, 2);
-      ctx!.fillStyle = "#0b0f1a";
+      ctx!.fillStyle = "#ffffff";
       ctx!.fillRect(0, 0, canvas.width, canvas.height);
       ctx!.drawImage(img, 0, 0);
       const a = document.createElement("a");
@@ -157,20 +157,20 @@ export default function InteractiveChart({
     return (
       <ResponsiveContainer width="100%" height={chartHeight}>
         <ChartComponent data={data} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(99, 140, 255, 0.06)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e6ec" vertical={false} />
           <XAxis
             dataKey="name"
-            tick={{ fill: "var(--text-muted)", fontSize: 11 }}
-            axisLine={{ stroke: "rgba(99, 140, 255, 0.08)" }}
+            tick={{ fill: "#8896a6", fontSize: 11 }}
+            axisLine={{ stroke: "#e2e6ec" }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+            tick={{ fill: "#8896a6", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v) => fmt(v)}
           />
-          <Tooltip content={<CustomTooltip formatter={fmt} />} cursor={{ fill: "rgba(34, 211, 238, 0.05)" }} />
+          <Tooltip content={<CustomTooltip formatter={fmt} />} cursor={{ fill: "rgba(42, 124, 124, 0.04)" }} />
           {showLegend && (
             <Legend wrapperStyle={{ fontSize: "11px", color: "var(--text-secondary)" }} iconType="circle" iconSize={8} />
           )}
