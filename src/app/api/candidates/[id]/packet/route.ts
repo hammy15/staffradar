@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Candidate not assigned to a building" }, { status: 400 });
     }
 
-    const building: Building = {
+    const building = {
       id: candidate.building_id,
       name: candidate.building_name,
       type: candidate.building_type,
@@ -33,11 +33,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       state: candidate.building_state,
       zip: candidate.building_zip,
       phone: candidate.building_phone,
-      address: "",
-      lat: null,
-      lng: null,
-      created_at: "",
-    };
+    } as Building;
 
     const score = advancedScoreCandidate(candidate as Partial<Candidate>, building);
     const packet = generateOutreachPacket(candidate as Partial<Candidate>, building, score);

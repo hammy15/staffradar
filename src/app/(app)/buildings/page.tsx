@@ -1,216 +1,220 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Plus, MapPin, Phone, X, Radar } from "lucide-react";
+import dynamic from "next/dynamic";
+import {
+  Building2, MapPin, Star, AlertTriangle, Users, TrendingUp,
+  DollarSign, Activity, Loader2, Search,
+} from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import { toast } from "sonner";
-import type { Building, BuildingType } from "@/lib/types";
-import { BUILDING_TYPE_LABELS } from "@/lib/types";
+import type { Building } from "@/lib/types";
 
-const TYPES: BuildingType[] = ["SNF", "ALF", "HH", "Hospice"];
+const InteractiveChart = dynamic(() => import("@/components/InteractiveChart"), { ssr: false });
+
+function Stars({ rating }: { rating: number | null }) {
+  if (!rating) return <span className="text-xs text-muted">N/R</span>;
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} className={`w-3 h-3 ${i <= rating ? "text-amber-400 fill-amber-400" : "text-zinc-700"}`} />
+      ))}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  if (status === "urgent") return <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 font-semibold uppercase tracking-wider">Urgent</span>;
+  if (status === "watch") return <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold uppercase tracking-wider">Watch</span>;
+  return <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold uppercase tracking-wider">On Track</span>;
+}
 
 export default function BuildingsPage() {
   const { buildings, setBuildings } = useAppStore();
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    name: "", type: "SNF" as BuildingType, address: "", city: "", state: "", zip: "", phone: "",
-  });
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
-    fetch("/api/buildings").then((r) => r.json()).then(setBuildings);
+    fetch("/api/buildings").then((r) => r.json()).then((b) => { setBuildings(b); setLoading(false); });
   }, [setBuildings]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    const res = await fetch("/api/buildings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      const b = await res.json();
-      setBuildings([...buildings, b]);
-      setForm({ name: "", type: "SNF", address: "", city: "", state: "", zip: "", phone: "" });
-      setShowForm(false);
-      toast.success("Building added!");
-    } else {
-      toast.error("Failed to add building");
-    }
-    setLoading(false);
-  }
+  const states = [...new Set(buildings.map((b) => b.state))].sort();
+  const types = [...new Set(buildings.map((b) => b.type))].sort();
 
-  async function handleDelete(id: string) {
-    const res = await fetch(`/api/buildings/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setBuildings(buildings.filter((b) => b.id !== id));
-      toast.success("Building removed");
-    }
-  }
+  const filtered = buildings.filter((b) => {
+    if (search && !b.name.toLowerCase().includes(search.toLowerCase()) && !b.city.toLowerCase().includes(search.toLowerCase())) return false;
+    if (stateFilter && b.state !== stateFilter) return false;
+    if (typeFilter && b.type !== typeFilter) return false;
+    if (statusFilter && b.status !== statusFilter) return false;
+    return true;
+  });
 
-  const typeColors: Record<BuildingType, string> = {
-    SNF: "bg-blue-100 text-blue-700",
-    ALF: "bg-purple-100 text-purple-700",
-    HH: "bg-emerald-100 text-emerald-700",
-    Hospice: "bg-amber-100 text-amber-700",
-  };
+  const snfBuildings = filtered.filter((b) => b.type === "SNF");
+  const totalBeds = filtered.reduce((s, b) => s + (b.beds || 0), 0);
+  const avgOcc = snfBuildings.filter((b) => b.occupancy_pct).length > 0
+    ? Math.round(snfBuildings.filter((b) => b.occupancy_pct).reduce((s, b) => s + (b.occupancy_pct || 0), 0) / snfBuildings.filter((b) => b.occupancy_pct).length)
+    : 0;
+  const avgRating = snfBuildings.filter((b) => b.overall_rating).length > 0
+    ? (snfBuildings.filter((b) => b.overall_rating).reduce((s, b) => s + (b.overall_rating || 0), 0) / snfBuildings.filter((b) => b.overall_rating).length).toFixed(1)
+    : "—";
+  const urgentCount = filtered.filter((b) => b.status === "urgent").length;
+  const totalRevenue = filtered.reduce((s, b) => s + (b.revenue_2023 || 0), 0);
+
+  // Chart data
+  const stateChartData = states.map((s) => ({
+    name: s,
+    value: buildings.filter((b) => b.state === s).length,
+  }));
+
+  const ratingChartData = [
+    { name: "5★", value: snfBuildings.filter((b) => b.overall_rating === 5).length },
+    { name: "4★", value: snfBuildings.filter((b) => b.overall_rating === 4).length },
+    { name: "3★", value: snfBuildings.filter((b) => b.overall_rating === 3).length },
+    { name: "2★", value: snfBuildings.filter((b) => b.overall_rating === 2).length },
+    { name: "1★", value: snfBuildings.filter((b) => b.overall_rating === 1).length },
+  ].filter((d) => d.value > 0);
+
+  const occChartData = snfBuildings
+    .filter((b) => b.occupancy_pct)
+    .sort((a, b) => (b.occupancy_pct || 0) - (a.occupancy_pct || 0))
+    .slice(0, 15)
+    .map((b) => ({ name: b.name.length > 12 ? b.name.slice(0, 12) + "…" : b.name, value: b.occupancy_pct || 0 }));
+
+  if (loading) return <div className="flex justify-center py-24"><Loader2 className="w-6 h-6 text-cyan-400 animate-spin" /></div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Buildings</h2>
-          <p className="text-muted mt-1">Manage your facilities</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-xl transition"
-        >
-          {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showForm ? "Cancel" : "Add Building"}
-        </button>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Cascadia Healthcare</h2>
+        <p className="text-secondary text-sm mt-1">{buildings.length} facilities across {states.length} states</p>
       </div>
 
-      {/* Add Form */}
-      {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-border p-6 animate-fade-in-up">
-          <h3 className="font-semibold mb-4">New Building</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1">Building Name</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                placeholder="Sunrise Senior Living"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Type</label>
-              <select
-                value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value as BuildingType })}
-                className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              >
-                {TYPES.map((t) => (
-                  <option key={t} value={t}>{BUILDING_TYPE_LABELS[t]}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Phone</label>
-              <input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                placeholder="(555) 123-4567"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium mb-1">Address</label>
-              <input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                placeholder="123 Main Street"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">City</label>
-              <input
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">State</label>
-                <input
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value.toUpperCase() })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  maxLength={2}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">ZIP</label>
-                <input
-                  value={form.zip}
-                  onChange={(e) => setForm({ ...form, zip: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  required
-                />
-              </div>
-            </div>
+      {/* Portfolio Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        {[
+          { label: "Facilities", value: filtered.length, icon: Building2, accent: "text-cyan-400" },
+          { label: "Total Beds", value: totalBeds.toLocaleString(), icon: Users, accent: "text-teal-400" },
+          { label: "Avg Occ", value: `${avgOcc}%`, icon: Activity, accent: "text-violet-400" },
+          { label: "Avg Rating", value: avgRating, icon: Star, accent: "text-amber-400" },
+          { label: "Urgent", value: urgentCount, icon: AlertTriangle, accent: urgentCount > 0 ? "text-rose-400" : "text-zinc-500" },
+          { label: "Revenue", value: `$${(totalRevenue / 1000000).toFixed(0)}M`, icon: DollarSign, accent: "text-emerald-400" },
+        ].map((m) => (
+          <div key={m.label} className="glass rounded-xl p-3">
+            <m.icon className={`w-4 h-4 ${m.accent} mb-1.5`} />
+            <div className="text-xl font-bold metric">{m.value}</div>
+            <div className="text-[10px] text-muted uppercase tracking-wider">{m.label}</div>
           </div>
-          <div className="mt-5 flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-xl transition disabled:opacity-50"
-            >
-              {loading ? "Adding..." : "Add Building"}
-            </button>
-          </div>
-        </form>
-      )}
+        ))}
+      </div>
 
-      {/* Building List */}
-      {buildings.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-border">
-          <Building2 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-          <h3 className="font-semibold text-lg mb-1">No buildings yet</h3>
-          <p className="text-muted mb-4">Add your first facility to start scanning for talent</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-semibold rounded-xl transition"
-          >
-            Add Your First Building
-          </button>
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <InteractiveChart title="By State" data={stateChartData} defaultType="pie" allowedTypes={["pie", "bar"]} height={220}
+          colors={["#22d3ee", "#2dd4bf", "#a78bfa", "#fbbf24", "#fb7185"]} />
+        <InteractiveChart title="Rating Distribution" subtitle="SNF facilities only" data={ratingChartData} defaultType="bar" allowedTypes={["bar", "pie"]} height={220}
+          colors={["#34d399", "#2dd4bf", "#fbbf24", "#f97316", "#fb7185"]} />
+        <InteractiveChart title="Top Occupancy" subtitle="SNF by occupancy %" data={occChartData} defaultType="bar" allowedTypes={["bar", "line"]} height={220}
+          valueFormatter={(v) => `${v}%`} colors={["#a78bfa"]} />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search buildings..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm" />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-          {buildings.map((b: Building) => (
-            <div
-              key={b.id}
-              className="bg-white rounded-2xl border border-border p-5 hover:shadow-md transition group"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-lg">{b.name}</h3>
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${typeColors[b.type as BuildingType]}`}>
-                    {BUILDING_TYPE_LABELS[b.type as BuildingType]}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDelete(b.id)}
-                  className="text-slate-300 hover:text-danger transition opacity-0 group-hover:opacity-100"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="space-y-1.5 text-sm text-muted">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {b.address}, {b.city}, {b.state} {b.zip}
-                </div>
-                {b.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5" />
-                    {b.phone}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+        <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className="px-3 py-2.5 rounded-xl text-sm">
+          <option value="">All States</option>
+          {states.map((s) => <option key={s} value={s}>{s} ({buildings.filter((b) => b.state === s).length})</option>)}
+        </select>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="px-3 py-2.5 rounded-xl text-sm">
+          <option value="">All Types</option>
+          {types.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2.5 rounded-xl text-sm">
+          <option value="">All Status</option>
+          <option value="urgent">Urgent</option>
+          <option value="watch">Watch</option>
+          <option value="on_track">On Track</option>
+        </select>
+      </div>
+
+      {/* Facility Table */}
+      <div className="glass rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="px-4 py-3 text-left">Facility</th>
+                <th className="px-4 py-3 text-left">Type</th>
+                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-center">Rating</th>
+                <th className="px-4 py-3 text-right">Beds</th>
+                <th className="px-4 py-3 text-right">Occ %</th>
+                <th className="px-4 py-3 text-right">RN hrs/d</th>
+                <th className="px-4 py-3 text-right">Turnover</th>
+                <th className="px-4 py-3 text-right">EBITDAR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((b: Building) => (
+                <tr key={b.id} className={b.special_focus ? "bg-rose-500/5" : ""}>
+                  <td className="px-4 py-3">
+                    <div className="font-medium flex items-center gap-2">
+                      {b.name}
+                      {b.special_focus && <span title="Special Focus Facility"><AlertTriangle className="w-3 h-3 text-rose-400" /></span>}
+                    </div>
+                    <div className="text-[11px] text-muted flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {b.city}, {b.state}
+                      {b.ccn && <span className="ml-1 text-muted">· CCN {b.ccn}</span>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      b.type === "SNF" ? "bg-cyan-500/15 text-cyan-400" :
+                      b.type === "ALF" ? "bg-violet-500/15 text-violet-400" :
+                      "bg-teal-500/15 text-teal-400"
+                    }`}>{b.type}</span>
+                  </td>
+                  <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
+                  <td className="px-4 py-3 text-center"><Stars rating={b.overall_rating} /></td>
+                  <td className="px-4 py-3 text-right font-mono">{b.beds || "—"}</td>
+                  <td className="px-4 py-3 text-right">
+                    {b.occupancy_pct ? (
+                      <span className={`font-mono ${b.occupancy_pct >= 85 ? "text-emerald-400" : b.occupancy_pct >= 70 ? "text-amber-400" : "text-rose-400"}`}>
+                        {b.occupancy_pct}%
+                      </span>
+                    ) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {b.rn_hours_per_day ? (
+                      <span className={`font-mono ${b.rn_hours_per_day >= 1.0 ? "text-emerald-400" : b.rn_hours_per_day >= 0.6 ? "text-amber-400" : "text-rose-400"}`}>
+                        {b.rn_hours_per_day.toFixed(3)}
+                      </span>
+                    ) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {b.turnover_pct ? (
+                      <span className={`font-mono ${b.turnover_pct <= 40 ? "text-emerald-400" : b.turnover_pct <= 55 ? "text-amber-400" : "text-rose-400"}`}>
+                        {b.turnover_pct}%
+                      </span>
+                    ) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {b.ebitdar_annual ? (
+                      <span className="font-mono">${(b.ebitdar_annual / 1000000).toFixed(1)}M</span>
+                    ) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }

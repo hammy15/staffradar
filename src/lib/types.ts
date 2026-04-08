@@ -1,4 +1,4 @@
-export type BuildingType = "SNF" | "ALF" | "HH" | "Hospice";
+export type BuildingType = "SNF" | "ALF" | "ILF" | "HH" | "Hospice";
 
 export interface Building {
   id: string;
@@ -11,6 +11,22 @@ export interface Building {
   phone: string | null;
   lat: number | null;
   lng: number | null;
+  facility_id: number | null;
+  ccn: string | null;
+  beds: number | null;
+  overall_rating: number | null;
+  health_rating: number | null;
+  qm_rating: number | null;
+  staffing_rating: number | null;
+  occupancy_pct: number | null;
+  rn_hours_per_day: number | null;
+  turnover_pct: number | null;
+  ownership: string | null;
+  revenue_2023: number | null;
+  net_income_2023: number | null;
+  ebitdar_annual: number | null;
+  special_focus: boolean;
+  status: string | null;
   created_at: string;
 }
 
@@ -181,6 +197,7 @@ export const NPI_TAXONOMY_MAP: Record<string, string> = {
 export const BUILDING_TYPE_LABELS: Record<BuildingType, string> = {
   SNF: "Skilled Nursing Facility",
   ALF: "Assisted Living Facility",
+  ILF: "Independent Living",
   HH: "Home Health",
   Hospice: "Hospice",
 };
