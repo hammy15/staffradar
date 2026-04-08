@@ -14,60 +14,60 @@ const OES_CODES: Record<string, { soc: string; title: string }> = {
   "Social Worker": { soc: "21-1022", title: "Healthcare Social Workers" },
 };
 
-// BLS May 2023 OES data — real published data for all 50 states + DC
-// Source: https://www.bls.gov/oes/current/oes_nat.htm
-const BLS_REAL_DATA: Record<string, Record<string, { total: number; per_1000: number; avg_salary: number }>> = {
-  AL: { RN: { total: 47950, per_1000: 23.89, avg_salary: 63410 }, CNA: { total: 26920, per_1000: 13.41, avg_salary: 28590 }, LPN: { total: 15070, per_1000: 7.51, avg_salary: 44600 } },
-  AK: { RN: { total: 6700, per_1000: 20.72, avg_salary: 97230 }, CNA: { total: 2810, per_1000: 8.69, avg_salary: 39840 }, LPN: { total: 690, per_1000: 2.13, avg_salary: 60630 } },
-  AZ: { RN: { total: 57430, per_1000: 18.68, avg_salary: 84230 }, CNA: { total: 22680, per_1000: 7.38, avg_salary: 36680 }, LPN: { total: 7440, per_1000: 2.42, avg_salary: 59000 } },
-  AR: { RN: { total: 27110, per_1000: 21.71, avg_salary: 64670 }, CNA: { total: 17720, per_1000: 14.19, avg_salary: 28400 }, LPN: { total: 8310, per_1000: 6.65, avg_salary: 43490 } },
-  CA: { RN: { total: 327790, per_1000: 18.93, avg_salary: 133340 }, CNA: { total: 101760, per_1000: 5.88, avg_salary: 43350 }, LPN: { total: 59630, per_1000: 3.44, avg_salary: 67020 } },
-  CO: { RN: { total: 50190, per_1000: 17.77, avg_salary: 84100 }, CNA: { total: 17540, per_1000: 6.21, avg_salary: 37860 }, LPN: { total: 5610, per_1000: 1.99, avg_salary: 57830 } },
-  CT: { RN: { total: 34160, per_1000: 20.49, avg_salary: 91070 }, CNA: { total: 19800, per_1000: 11.88, avg_salary: 38650 }, LPN: { total: 5460, per_1000: 3.27, avg_salary: 58810 } },
-  DE: { RN: { total: 10480, per_1000: 22.34, avg_salary: 78370 }, CNA: { total: 5470, per_1000: 11.65, avg_salary: 33790 }, LPN: { total: 1670, per_1000: 3.56, avg_salary: 53970 } },
-  FL: { RN: { total: 189120, per_1000: 19.79, avg_salary: 75330 }, CNA: { total: 95400, per_1000: 9.99, avg_salary: 33080 }, LPN: { total: 41840, per_1000: 4.38, avg_salary: 49780 } },
-  GA: { RN: { total: 83660, per_1000: 17.49, avg_salary: 78520 }, CNA: { total: 39550, per_1000: 8.27, avg_salary: 30200 }, LPN: { total: 18270, per_1000: 3.82, avg_salary: 48990 } },
-  HI: { RN: { total: 12170, per_1000: 19.16, avg_salary: 106530 }, CNA: { total: 4250, per_1000: 6.69, avg_salary: 39100 }, LPN: { total: 1100, per_1000: 1.73, avg_salary: 56050 } },
-  ID: { RN: { total: 14010, per_1000: 17.49, avg_salary: 76340 }, CNA: { total: 6660, per_1000: 8.31, avg_salary: 33780 }, LPN: { total: 2110, per_1000: 2.63, avg_salary: 51020 } },
-  IL: { RN: { total: 119430, per_1000: 19.78, avg_salary: 80930 }, CNA: { total: 60260, per_1000: 9.98, avg_salary: 36220 }, LPN: { total: 15270, per_1000: 2.53, avg_salary: 55140 } },
-  IN: { RN: { total: 62350, per_1000: 19.89, avg_salary: 70690 }, CNA: { total: 33070, per_1000: 10.55, avg_salary: 32530 }, LPN: { total: 11650, per_1000: 3.72, avg_salary: 50780 } },
-  IA: { RN: { total: 31670, per_1000: 20.15, avg_salary: 66630 }, CNA: { total: 19590, per_1000: 12.47, avg_salary: 34430 }, LPN: { total: 4120, per_1000: 2.62, avg_salary: 48680 } },
-  KS: { RN: { total: 28220, per_1000: 19.69, avg_salary: 68740 }, CNA: { total: 14870, per_1000: 10.38, avg_salary: 30830 }, LPN: { total: 5600, per_1000: 3.91, avg_salary: 47300 } },
-  KY: { RN: { total: 40430, per_1000: 21.02, avg_salary: 68120 }, CNA: { total: 22970, per_1000: 11.94, avg_salary: 30660 }, LPN: { total: 9740, per_1000: 5.06, avg_salary: 46350 } },
-  LA: { RN: { total: 39740, per_1000: 20.56, avg_salary: 69300 }, CNA: { total: 25670, per_1000: 13.28, avg_salary: 26840 }, LPN: { total: 15550, per_1000: 8.05, avg_salary: 45240 } },
-  ME: { RN: { total: 13520, per_1000: 21.73, avg_salary: 72970 }, CNA: { total: 8440, per_1000: 13.56, avg_salary: 37200 }, LPN: { total: 1680, per_1000: 2.70, avg_salary: 52960 } },
-  MD: { RN: { total: 53570, per_1000: 19.65, avg_salary: 85270 }, CNA: { total: 26170, per_1000: 9.60, avg_salary: 35590 }, LPN: { total: 8260, per_1000: 3.03, avg_salary: 55910 } },
-  MA: { RN: { total: 86390, per_1000: 23.13, avg_salary: 101260 }, CNA: { total: 41340, per_1000: 11.07, avg_salary: 40710 }, LPN: { total: 13290, per_1000: 3.56, avg_salary: 62740 } },
-  MI: { RN: { total: 88070, per_1000: 20.34, avg_salary: 78730 }, CNA: { total: 42330, per_1000: 9.78, avg_salary: 36770 }, LPN: { total: 14740, per_1000: 3.40, avg_salary: 54440 } },
-  MN: { RN: { total: 58870, per_1000: 19.63, avg_salary: 86800 }, CNA: { total: 29900, per_1000: 9.97, avg_salary: 39040 }, LPN: { total: 9140, per_1000: 3.05, avg_salary: 52930 } },
-  MS: { RN: { total: 27920, per_1000: 23.81, avg_salary: 62210 }, CNA: { total: 17270, per_1000: 14.73, avg_salary: 25780 }, LPN: { total: 9620, per_1000: 8.20, avg_salary: 42240 } },
-  MO: { RN: { total: 61070, per_1000: 21.09, avg_salary: 69570 }, CNA: { total: 32100, per_1000: 11.08, avg_salary: 31150 }, LPN: { total: 11190, per_1000: 3.86, avg_salary: 47690 } },
-  MT: { RN: { total: 10180, per_1000: 20.73, avg_salary: 76050 }, CNA: { total: 5190, per_1000: 10.57, avg_salary: 35200 }, LPN: { total: 1350, per_1000: 2.75, avg_salary: 48800 } },
-  NE: { RN: { total: 20010, per_1000: 19.56, avg_salary: 70520 }, CNA: { total: 12310, per_1000: 12.03, avg_salary: 34740 }, LPN: { total: 3580, per_1000: 3.50, avg_salary: 49460 } },
-  NV: { RN: { total: 24180, per_1000: 16.56, avg_salary: 90640 }, CNA: { total: 8210, per_1000: 5.62, avg_salary: 38950 }, LPN: { total: 3730, per_1000: 2.55, avg_salary: 58960 } },
-  NH: { RN: { total: 12720, per_1000: 19.15, avg_salary: 78930 }, CNA: { total: 6930, per_1000: 10.44, avg_salary: 38780 }, LPN: { total: 1930, per_1000: 2.91, avg_salary: 56640 } },
-  NJ: { RN: { total: 82610, per_1000: 19.96, avg_salary: 94690 }, CNA: { total: 42890, per_1000: 10.36, avg_salary: 37640 }, LPN: { total: 13490, per_1000: 3.26, avg_salary: 58560 } },
-  NM: { RN: { total: 16180, per_1000: 19.42, avg_salary: 80570 }, CNA: { total: 6270, per_1000: 7.53, avg_salary: 32050 }, LPN: { total: 2730, per_1000: 3.28, avg_salary: 52590 } },
-  NY: { RN: { total: 190940, per_1000: 19.85, avg_salary: 100350 }, CNA: { total: 115790, per_1000: 12.03, avg_salary: 42160 }, LPN: { total: 36150, per_1000: 3.76, avg_salary: 56060 } },
-  NC: { RN: { total: 89040, per_1000: 18.67, avg_salary: 73620 }, CNA: { total: 44700, per_1000: 9.37, avg_salary: 31710 }, LPN: { total: 14420, per_1000: 3.02, avg_salary: 49940 } },
-  ND: { RN: { total: 8190, per_1000: 18.68, avg_salary: 72140 }, CNA: { total: 5850, per_1000: 13.35, avg_salary: 37670 }, LPN: { total: 1880, per_1000: 4.29, avg_salary: 49820 } },
-  OH: { RN: { total: 118290, per_1000: 21.52, avg_salary: 73550 }, CNA: { total: 63100, per_1000: 11.48, avg_salary: 34310 }, LPN: { total: 25330, per_1000: 4.61, avg_salary: 50140 } },
-  OK: { RN: { total: 30550, per_1000: 18.29, avg_salary: 71020 }, CNA: { total: 16840, per_1000: 10.08, avg_salary: 29270 }, LPN: { total: 8950, per_1000: 5.36, avg_salary: 46640 } },
-  OR: { RN: { total: 36570, per_1000: 18.89, avg_salary: 101130 }, CNA: { total: 12160, per_1000: 6.28, avg_salary: 41010 }, LPN: { total: 3790, per_1000: 1.96, avg_salary: 60940 } },
-  PA: { RN: { total: 131720, per_1000: 22.00, avg_salary: 79640 }, CNA: { total: 72910, per_1000: 12.18, avg_salary: 36020 }, LPN: { total: 27090, per_1000: 4.52, avg_salary: 53480 } },
-  RI: { RN: { total: 11380, per_1000: 22.59, avg_salary: 85870 }, CNA: { total: 5680, per_1000: 11.28, avg_salary: 37690 }, LPN: { total: 1590, per_1000: 3.16, avg_salary: 60010 } },
-  SC: { RN: { total: 42280, per_1000: 19.22, avg_salary: 71780 }, CNA: { total: 20050, per_1000: 9.11, avg_salary: 30930 }, LPN: { total: 7340, per_1000: 3.34, avg_salary: 46670 } },
-  SD: { RN: { total: 9710, per_1000: 21.97, avg_salary: 63370 }, CNA: { total: 6350, per_1000: 14.37, avg_salary: 33540 }, LPN: { total: 2420, per_1000: 5.48, avg_salary: 45920 } },
-  TN: { RN: { total: 62050, per_1000: 19.14, avg_salary: 69790 }, CNA: { total: 31110, per_1000: 9.59, avg_salary: 30650 }, LPN: { total: 13950, per_1000: 4.30, avg_salary: 46220 } },
-  TX: { RN: { total: 226070, per_1000: 16.52, avg_salary: 82750 }, CNA: { total: 87000, per_1000: 6.36, avg_salary: 32480 }, LPN: { total: 52420, per_1000: 3.83, avg_salary: 52710 } },
-  UT: { RN: { total: 22510, per_1000: 13.68, avg_salary: 74360 }, CNA: { total: 9430, per_1000: 5.73, avg_salary: 33400 }, LPN: { total: 2540, per_1000: 1.54, avg_salary: 51970 } },
-  VT: { RN: { total: 6360, per_1000: 20.48, avg_salary: 75600 }, CNA: { total: 3570, per_1000: 11.49, avg_salary: 38920 }, LPN: { total: 940, per_1000: 3.03, avg_salary: 51680 } },
-  VA: { RN: { total: 67050, per_1000: 16.49, avg_salary: 80430 }, CNA: { total: 31200, per_1000: 7.68, avg_salary: 33370 }, LPN: { total: 11800, per_1000: 2.90, avg_salary: 51340 } },
-  WA: { RN: { total: 63820, per_1000: 17.73, avg_salary: 101670 }, CNA: { total: 23810, per_1000: 6.61, avg_salary: 42810 }, LPN: { total: 7530, per_1000: 2.09, avg_salary: 64670 } },
-  WV: { RN: { total: 16410, per_1000: 23.21, avg_salary: 65200 }, CNA: { total: 8420, per_1000: 11.91, avg_salary: 29270 }, LPN: { total: 4080, per_1000: 5.77, avg_salary: 42880 } },
-  WI: { RN: { total: 56810, per_1000: 19.31, avg_salary: 77860 }, CNA: { total: 29070, per_1000: 9.88, avg_salary: 36950 }, LPN: { total: 6640, per_1000: 2.26, avg_salary: 51270 } },
-  WY: { RN: { total: 4630, per_1000: 16.81, avg_salary: 74600 }, CNA: { total: 2230, per_1000: 8.10, avg_salary: 35180 }, LPN: { total: 780, per_1000: 2.83, avg_salary: 50050 } },
-  DC: { RN: { total: 13580, per_1000: 17.19, avg_salary: 102030 }, CNA: { total: 4990, per_1000: 6.31, avg_salary: 39620 }, LPN: { total: 1730, per_1000: 2.19, avg_salary: 56120 } },
+// BLS OEWS May 2024 — real published data, all 50 states + DC
+// Source: state_M2024_dl.xlsx from https://www.bls.gov/oes/tables.htm
+const BLS_DATA: Record<string, Record<string, { total: number; per_1000: number; avg_salary: number }>> = {
+  AK: { RN: { total: 7040, per_1000: 21.92, avg_salary: 112040 }, CNA: { total: 1660, per_1000: 5.159, avg_salary: 48550 }, LPN: { total: 300, per_1000: 0.935, avg_salary: 77850 } },
+  AL: { RN: { total: 53340, per_1000: 25.503, avg_salary: 74970 }, CNA: { total: 24560, per_1000: 11.741, avg_salary: 32670 }, LPN: { total: 10840, per_1000: 5.182, avg_salary: 50760 } },
+  AR: { RN: { total: 28320, per_1000: 21.97, avg_salary: 77720 }, CNA: { total: 17620, per_1000: 13.67, avg_salary: 33350 }, LPN: { total: 10110, per_1000: 7.847, avg_salary: 52540 } },
+  AZ: { RN: { total: 64430, per_1000: 20.155, avg_salary: 95230 }, CNA: { total: 17350, per_1000: 5.428, avg_salary: 43060 }, LPN: { total: 5200, per_1000: 1.628, avg_salary: 72840 } },
+  CA: { RN: { total: 326720, per_1000: 18.093, avg_salary: 148330 }, CNA: { total: 102380, per_1000: 5.67, avg_salary: 48790 }, LPN: { total: 79610, per_1000: 4.409, avg_salary: 79090 } },
+  CO: { RN: { total: 54510, per_1000: 18.853, avg_salary: 95470 }, CNA: { total: 20880, per_1000: 7.222, avg_salary: 45480 }, LPN: { total: 5030, per_1000: 1.74, avg_salary: 68570 } },
+  CT: { RN: { total: 39020, per_1000: 23.198, avg_salary: 103670 }, CNA: { total: 21390, per_1000: 12.717, avg_salary: 44860 }, LPN: { total: 8890, per_1000: 5.283, avg_salary: 70240 } },
+  DC: { RN: { total: 9790, per_1000: 13.81, avg_salary: 109240 }, CNA: { total: 2550, per_1000: 3.601, avg_salary: 47480 }, LPN: { total: 1170, per_1000: 1.648, avg_salary: 70530 } },
+  DE: { RN: { total: 13260, per_1000: 27.822, avg_salary: 95450 }, CNA: { total: 5660, per_1000: 11.885, avg_salary: 40120 }, LPN: { total: 1600, per_1000: 3.351, avg_salary: 66510 } },
+  FL: { RN: { total: 218100, per_1000: 22.21, avg_salary: 88200 }, CNA: { total: 91280, per_1000: 9.296, avg_salary: 38320 }, LPN: { total: 36470, per_1000: 3.714, avg_salary: 60320 } },
+  GA: { RN: { total: 97410, per_1000: 20.059, avg_salary: 91960 }, CNA: { total: 42460, per_1000: 8.744, avg_salary: 37090 }, LPN: { total: 20800, per_1000: 4.283, avg_salary: 58090 } },
+  HI: { RN: { total: 13100, per_1000: 21.099, avg_salary: 123720 }, CNA: { total: 4620, per_1000: 7.439, avg_salary: 45480 }, LPN: { total: 710, per_1000: 1.137, avg_salary: 67540 } },
+  IA: { RN: { total: 33480, per_1000: 21.438, avg_salary: 77780 }, CNA: { total: 22970, per_1000: 14.709, avg_salary: 40590 }, LPN: { total: 5520, per_1000: 3.535, avg_salary: 59640 } },
+  ID: { RN: { total: 14540, per_1000: 17.214, avg_salary: 89770 }, CNA: { total: 7340, per_1000: 8.684, avg_salary: 37740 }, LPN: { total: 2380, per_1000: 2.82, avg_salary: 59340 } },
+  IL: { RN: { total: 139900, per_1000: 23.066, avg_salary: 91130 }, CNA: { total: 64660, per_1000: 10.66, avg_salary: 43950 }, LPN: { total: 18230, per_1000: 3.006, avg_salary: 68450 } },
+  IN: { RN: { total: 68950, per_1000: 21.638, avg_salary: 85850 }, CNA: { total: 31240, per_1000: 9.804, avg_salary: 38610 }, LPN: { total: 14680, per_1000: 4.607, avg_salary: 62990 } },
+  KS: { RN: { total: 32640, per_1000: 22.805, avg_salary: 79430 }, CNA: { total: 23950, per_1000: 16.737, avg_salary: 38600 }, LPN: { total: 6940, per_1000: 4.85, avg_salary: 59930 } },
+  KY: { RN: { total: 48170, per_1000: 24.163, avg_salary: 83900 }, CNA: { total: 22910, per_1000: 11.491, avg_salary: 37960 }, LPN: { total: 9190, per_1000: 4.612, avg_salary: 57410 } },
+  LA: { RN: { total: 46790, per_1000: 24.479, avg_salary: 84110 }, CNA: { total: 20550, per_1000: 10.751, avg_salary: 31700 }, LPN: { total: 18630, per_1000: 9.746, avg_salary: 54610 } },
+  MA: { RN: { total: 90190, per_1000: 24.759, avg_salary: 112610 }, CNA: { total: 38280, per_1000: 10.508, avg_salary: 46130 }, LPN: { total: 15210, per_1000: 4.174, avg_salary: 76400 } },
+  MD: { RN: { total: 48980, per_1000: 17.835, avg_salary: 96650 }, CNA: { total: 24230, per_1000: 8.824, avg_salary: 42070 }, LPN: { total: 9510, per_1000: 3.461, avg_salary: 70700 } },
+  ME: { RN: { total: 16280, per_1000: 25.626, avg_salary: 87440 }, CNA: { total: 8590, per_1000: 13.518, avg_salary: 45500 }, LPN: { total: 850, per_1000: 1.337, avg_salary: 72600 } },
+  MI: { RN: { total: 104210, per_1000: 23.735, avg_salary: 90580 }, CNA: { total: 40230, per_1000: 9.163, avg_salary: 40210 }, LPN: { total: 11060, per_1000: 2.519, avg_salary: 65430 } },
+  MN: { RN: { total: 64740, per_1000: 22.167, avg_salary: 99460 }, CNA: { total: 26970, per_1000: 9.233, avg_salary: 45230 }, LPN: { total: 12740, per_1000: 4.363, avg_salary: 61270 } },
+  MO: { RN: { total: 74270, per_1000: 25.452, avg_salary: 81950 }, CNA: { total: 32650, per_1000: 11.189, avg_salary: 37650 }, LPN: { total: 14320, per_1000: 4.907, avg_salary: 58900 } },
+  MS: { RN: { total: 29400, per_1000: 25.351, avg_salary: 79470 }, CNA: { total: 13130, per_1000: 11.323, avg_salary: 31750 }, LPN: { total: 9880, per_1000: 8.519, avg_salary: 49960 } },
+  MT: { RN: { total: 10540, per_1000: 20.666, avg_salary: 88480 }, CNA: { total: 4800, per_1000: 9.421, avg_salary: 42020 }, LPN: { total: 1630, per_1000: 3.201, avg_salary: 58710 } },
+  NC: { RN: { total: 108510, per_1000: 22.153, avg_salary: 86270 }, CNA: { total: 61280, per_1000: 12.511, avg_salary: 37980 }, LPN: { total: 17430, per_1000: 3.558, avg_salary: 62040 } },
+  ND: { RN: { total: 11000, per_1000: 25.953, avg_salary: 81900 }, CNA: { total: 6920, per_1000: 16.323, avg_salary: 42530 }, LPN: { total: 1930, per_1000: 4.554, avg_salary: 60110 } },
+  NE: { RN: { total: 24180, per_1000: 23.801, avg_salary: 82890 }, CNA: { total: 16490, per_1000: 16.232, avg_salary: 40830 }, LPN: { total: 4820, per_1000: 4.747, avg_salary: 60240 } },
+  NH: { RN: { total: 16580, per_1000: 24.266, avg_salary: 94620 }, CNA: { total: 7190, per_1000: 10.529, avg_salary: 47190 }, LPN: { total: 2130, per_1000: 3.116, avg_salary: 73850 } },
+  NJ: { RN: { total: 95150, per_1000: 22.387, avg_salary: 106990 }, CNA: { total: 31310, per_1000: 7.365, avg_salary: 44480 }, LPN: { total: 15210, per_1000: 3.577, avg_salary: 71300 } },
+  NM: { RN: { total: 17510, per_1000: 20.343, avg_salary: 94360 }, CNA: { total: 4600, per_1000: 5.349, avg_salary: 38320 }, LPN: { total: 1850, per_1000: 2.155, avg_salary: 56690 } },
+  NV: { RN: { total: 27570, per_1000: 18.024, avg_salary: 102280 }, CNA: { total: 8670, per_1000: 5.666, avg_salary: 44360 }, LPN: { total: 3210, per_1000: 2.098, avg_salary: 71460 } },
+  NY: { RN: { total: 204120, per_1000: 21.392, avg_salary: 110490 }, CNA: { total: 85310, per_1000: 8.941, avg_salary: 47530 }, LPN: { total: 40720, per_1000: 4.267, avg_salary: 66380 } },
+  OH: { RN: { total: 138360, per_1000: 25.037, avg_salary: 86110 }, CNA: { total: 62360, per_1000: 11.284, avg_salary: 39840 }, LPN: { total: 36440, per_1000: 6.595, avg_salary: 60600 } },
+  OK: { RN: { total: 32870, per_1000: 19.426, avg_salary: 85800 }, CNA: { total: 19860, per_1000: 11.737, avg_salary: 34900 }, LPN: { total: 11820, per_1000: 6.986, avg_salary: 55270 } },
+  OR: { RN: { total: 39900, per_1000: 20.3, avg_salary: 120470 }, CNA: { total: 12800, per_1000: 6.511, avg_salary: 49970 }, LPN: { total: 4340, per_1000: 2.208, avg_salary: 78160 } },
+  PA: { RN: { total: 146840, per_1000: 24.415, avg_salary: 90830 }, CNA: { total: 65410, per_1000: 10.877, avg_salary: 41700 }, LPN: { total: 31140, per_1000: 5.177, avg_salary: 62550 } },
+  RI: { RN: { total: 10760, per_1000: 21.796, avg_salary: 99770 }, CNA: { total: 8450, per_1000: 17.11, avg_salary: 43740 }, LPN: { total: 1080, per_1000: 2.191, avg_salary: 77240 } },
+  SC: { RN: { total: 50300, per_1000: 22.143, avg_salary: 84930 }, CNA: { total: 21000, per_1000: 9.244, avg_salary: 35970 }, LPN: { total: 8740, per_1000: 3.846, avg_salary: 58430 } },
+  SD: { RN: { total: 14500, per_1000: 32.017, avg_salary: 72210 }, CNA: { total: 6520, per_1000: 14.393, avg_salary: 38070 }, LPN: { total: 2100, per_1000: 4.641, avg_salary: 51230 } },
+  TN: { RN: { total: 67990, per_1000: 20.765, avg_salary: 82010 }, CNA: { total: 23030, per_1000: 7.032, avg_salary: 37040 }, LPN: { total: 19140, per_1000: 5.846, avg_salary: 53490 } },
+  TX: { RN: { total: 261050, per_1000: 18.853, avg_salary: 91690 }, CNA: { total: 87050, per_1000: 6.287, avg_salary: 37010 }, LPN: { total: 59060, per_1000: 4.266, avg_salary: 60020 } },
+  UT: { RN: { total: 25780, per_1000: 15.078, avg_salary: 88240 }, CNA: { total: 12350, per_1000: 7.222, avg_salary: 39240 }, LPN: { total: 1690, per_1000: 0.986, avg_salary: 61390 } },
+  VA: { RN: { total: 77420, per_1000: 19.048, avg_salary: 90930 }, CNA: { total: 42760, per_1000: 10.52, avg_salary: 40160 }, LPN: { total: 16710, per_1000: 4.111, avg_salary: 63380 } },
+  VT: { RN: { total: 7240, per_1000: 23.793, avg_salary: 92710 }, CNA: { total: 3140, per_1000: 10.333, avg_salary: 43610 }, LPN: { total: 1260, per_1000: 4.132, avg_salary: 68580 } },
+  WA: { RN: { total: 64690, per_1000: 18.275, avg_salary: 115740 }, CNA: { total: 28080, per_1000: 7.934, avg_salary: 49960 }, LPN: { total: 6450, per_1000: 1.823, avg_salary: 79970 } },
+  WI: { RN: { total: 64960, per_1000: 22.219, avg_salary: 90450 }, CNA: { total: 27480, per_1000: 9.399, avg_salary: 43050 }, LPN: { total: 6830, per_1000: 2.336, avg_salary: 61680 } },
+  WV: { RN: { total: 21740, per_1000: 30.996, avg_salary: 80650 }, CNA: { total: 8860, per_1000: 12.633, avg_salary: 36320 }, LPN: { total: 6330, per_1000: 9.026, avg_salary: 52540 } },
+  WY: { RN: { total: 5180, per_1000: 18.6, avg_salary: 88020 }, CNA: { total: 2680, per_1000: 9.621, avg_salary: 41040 }, LPN: { total: 530, per_1000: 1.911, avg_salary: 61080 } },
 };
 
 export async function GET(req: NextRequest) {
@@ -79,14 +79,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "State is required" }, { status: 400 });
   }
 
-  const stateData = BLS_REAL_DATA[state];
+  const stateData = BLS_DATA[state];
   const oesInfo = roleType ? OES_CODES[roleType] : null;
 
   if (!stateData) {
     return NextResponse.json({
       state,
       available: false,
-      message: `No OES data available for ${state}.`,
+      message: `No OES data for ${state}.`,
       bls_link: `https://www.bls.gov/oes/current/oes_${state.toLowerCase()}.htm`,
     });
   }
@@ -100,9 +100,10 @@ export async function GET(req: NextRequest) {
       soc_code: oesInfo?.soc,
       soc_title: oesInfo?.title,
       ...data,
-      interpretation: data.per_1000 > 20
+      source: "BLS Occupational Employment and Wage Statistics, May 2024",
+      interpretation: data.per_1000 > 24
         ? "Very high density — large talent pool but competitive market"
-        : data.per_1000 > 15
+        : data.per_1000 > 18
         ? "Above average density — healthy supply of candidates"
         : data.per_1000 > 10
         ? "Moderate density — balanced supply and demand"
@@ -112,7 +113,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Return all roles for the state
   const roles = Object.entries(stateData).map(([role, data]) => ({
     role,
     soc_code: OES_CODES[role]?.soc,
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
     state,
     available: true,
     roles,
-    source: "BLS Occupational Employment and Wage Statistics, May 2023",
+    source: "BLS Occupational Employment and Wage Statistics, May 2024",
     bls_link: `https://www.bls.gov/oes/current/oes_${state.toLowerCase()}.htm`,
   });
 }
